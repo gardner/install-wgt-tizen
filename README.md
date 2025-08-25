@@ -1,10 +1,10 @@
-# Install Jellyfin for Samsung TV
+# Generic Tizen WGT Installer
 
-This project makes it easy to install [Jellyfin for Samsung TV](https://github.com/jellyfin/jellyfin-tizen) by automating the environment configuration with Docker.
+This project makes it easy to install any WGT (Web Application Package) file to Samsung Tizen TVs by automating the environment configuration with Docker.
 
-Samsung TVs have been running Tizen OS since 2015, and while the Jellyfin app is stable & officially supported, [the app has yet to make it onto the Samsung app store since efforts began in late 2021](https://github.com/jellyfin/jellyfin-tizen/issues/94).
+Samsung TVs have been running Tizen OS since 2015. This tool can install any WGT package from GitHub releases, making it useful for installing various Tizen applications including Jellyfin, custom apps, or development builds.
 
-Install Jellyfin to your TV with just one command once your computer and TV are configured as described below.
+Install any WGT package to your TV with a simple Docker command or docker-compose configuration once your computer and TV are configured as described below.
 
 ## Configure Computer (PC, Laptop, etc...)
 - Follow [Docker Installation Instructions](https://www.docker.com/get-started/)
@@ -34,28 +34,80 @@ Follow the [Samsung uninstall instructions](https://www.samsung.com/in/support/t
 
 - Make a note of the IP address as it will be needed later. 
 
-## Install Jellyfin
+## Install WGT Package
 
-#### Installation
-- Run the command below, replacing first argument with the IP of your Samsung TV
-   - If you just want to install the default build, do not put anything after the IP address.
-    - (Optional) You can provide preferred [jellyfin-tizen-builds](https://github.com/jeppevinkel/jellyfin-tizen-builds) option (Jellyfin / Jellyfin-TrueHD / Jellyfin-master / Jellyfin-master-TrueHD / Jellyfin-secondary) as second argument. By default, Jellyfin option is used.
-    - (Optional) You can provide preferred [jellyfin-tizen-builds releases](https://github.com/jeppevinkel/jellyfin-tizen-builds/releases) release tag URL as third argument. By default, latest version is used. This is useful if you want to install older Jellyfin Tizen Client version.
-    - (Optional) You can provide a custom Samsung certificate by mounting the `.p12` files at `/certificates/` and providing the certificate password as fourth argument.
-   - If you do not want to use either of these options and just install the default build, do not put anything after the IP address.
+### Quick Installation
+
+Install any WGT package by specifying the TV IP and optionally the GitHub repository, WGT file name, and release:
 
 ```bash
-docker run --rm ghcr.io/georift/install-jellyfin-tizen <samsung tv ip> [build option] [tag url] [certificate password]
+# Install default Jellyfin
+docker run --rm ghcr.io/georift/install-jellyfin-tizen 192.168.1.100
+
+# Install specific WGT file and release
+docker run --rm \
+  -e GITHUB_REPO=your-org/your-tizen-app \
+  -e WGT_FILE=YourApp \
+  -e RELEASE_TAG=v1.2.3 \
+  ghcr.io/georift/install-jellyfin-tizen 192.168.1.100
+
+# Using command line arguments (legacy method)
+docker run --rm ghcr.io/georift/install-jellyfin-tizen 192.168.1.100 YourApp v1.2.3
 ```
 
-Examples:
+### Docker Compose (Recommended)
 
-```bash
-docker run --rm ghcr.io/georift/install-jellyfin-tizen 192.168.0.10 Jellyfin-TrueHD "https://github.com/jeppevinkel/jellyfin-tizen-builds/releases/tag/2024-05-13-0139"
+Create or modify `docker-compose.yml`:
+
+```yaml
+version: '3.8'
+services:
+  jellyfin-installer:
+    image: ghcr.io/georift/install-jellyfin-tizen
+    environment:
+      - GITHUB_REPO=jeppevinkel/jellyfin-tizen-builds
+      - WGT_FILE=Jellyfin-TrueHD
+      - RELEASE_TAG=latest
+    command: ["192.168.1.100"]
+  
+  custom-app-installer:
+    image: ghcr.io/georift/install-jellyfin-tizen
+    environment:
+      - GITHUB_REPO=your-org/custom-tizen-app
+      - WGT_FILE=CustomApp
+      - RELEASE_TAG=v2.1.0
+    command: ["192.168.1.100"]
+    profiles: ["custom"]
 ```
 
+Run with:
 ```bash
-docker run --rm -v "$(pwd)/author.p12":/certificates/author.p12 -v "$(pwd)/distributor.p12":/certificates/distributor.p12 ghcr.io/georift/install-jellyfin-tizen 192.168.0.10 Jellyfin "" 'CertPassw0rd!' # Third argument empty to use latest tag
+# Install Jellyfin
+docker-compose up jellyfin-installer
+
+# Install custom app
+docker-compose --profile custom up custom-app-installer
+```
+
+### Configuration Options
+
+| Environment Variable | Default | Description |
+|---------------------|---------|-------------|
+| `GITHUB_REPO` | `jeppevinkel/jellyfin-tizen-builds` | GitHub repository (owner/repo) |
+| `WGT_FILE` | `Jellyfin` | WGT file name without .wgt extension |
+| `RELEASE_TAG` | `latest` | Release tag or "latest" |
+| `CERTIFICATE_PASSWORD` | (empty) | Password for custom certificates |
+
+### Custom Certificates
+
+For newer TV models requiring custom certificates:
+
+```bash
+docker run --rm \
+  -v "$(pwd)/author.p12":/certificates/author.p12 \
+  -v "$(pwd)/distributor.p12":/certificates/distributor.p12 \
+  -e CERTIFICATE_PASSWORD='YourPassword' \
+  ghcr.io/georift/install-jellyfin-tizen 192.168.1.100
 ```
 
 ### Validating Success
@@ -83,23 +135,28 @@ Tizen application is successfully installed.
 Total time: 00:00:12.205
 ```
 
-At this point you can find jellyfin on your TV by navigating to Apps -> Downloaded (scroll down), there you'll find Jellyfin.
+At this point you can find the installed app on your TV by navigating to Apps -> Downloaded (scroll down).
 
 ## Supported Platforms
 
-At the moment, these steps should work on any amd64 based system. Platforms
-like the Raspberry Pi, which run ARM chips, are not yet supported, but
-[we might have some progress soon.](https://github.com/Georift/install-jellyfin-tizen/issues/10).
+This tool works on any amd64 based system. For ARM-based systems (Apple Silicon Macs, Raspberry Pi, etc.), use the `--platform linux/amd64` flag:
 
-### Additional Required Commands: ARM (MacOS M Chips and higher)
-- Firstly make sure that you have the Experimental "Virtualization Framework" enabled.
-- Verify that docker on your M series has qemu installed. You can do this by running:
-```docker run --rm --platform linux/amd64 alpine uname -m```
+### ARM (Apple Silicon Macs, etc.)
+- Ensure Docker has the "Virtualization Framework" enabled
+- Verify QEMU support: `docker run --rm --platform linux/amd64 alpine uname -m` (should output **x86_64**)
 
-If it outputs: **x86_64** you're good. If not, reinstall docker, with the needed requirements.
+Use platform flag:
+```bash
+docker run --rm --platform linux/amd64 ghcr.io/georift/install-jellyfin-tizen 192.168.1.100
+```
 
-Then use the ```--platform linux/amd64"``` argument on the original command. This should look something like this:
-```docker run --rm --platform linux/amd64 ghcr.io/georift/install-jellyfin-tizen <samsung tv ip> <build option> <tag url>```
+Or in docker-compose.yml:
+```yaml
+services:
+  installer:
+    image: ghcr.io/georift/install-jellyfin-tizen
+    platform: linux/amd64
+```
 
 - `install failed[118, -12], reason: Check certificate error : :Invalid certificate chain with certificate in signature.`
 
@@ -107,10 +164,63 @@ Then use the ```--platform linux/amd64"``` argument on the original command. Thi
 
   See [official documentation](https://developer.samsung.com/smarttv/develop/getting-started/setting-up-sdk/creating-certificates.html) on creating your certificate and use the custom certificate arguments.
 
+## Examples
+
+### Install Jellyfin (Default)
+```bash
+docker run --rm ghcr.io/georift/install-jellyfin-tizen 192.168.1.100
+```
+
+### Install Different Jellyfin Build
+```bash
+docker run --rm -e WGT_FILE=Jellyfin-TrueHD ghcr.io/georift/install-jellyfin-tizen 192.168.1.100
+```
+
+### Install Custom Tizen App
+```bash
+docker run --rm \
+  -e GITHUB_REPO=your-username/your-tizen-app \
+  -e WGT_FILE=YourAppName \
+  -e RELEASE_TAG=v1.0.0 \
+  ghcr.io/georift/install-jellyfin-tizen 192.168.1.100
+```
+
+## CI/CD and Container Registry
+
+This project uses GitHub Actions to automatically build and publish Docker images to multiple registries:
+
+- **GitHub Container Registry (GHCR)**: `ghcr.io/georift/install-jellyfin-tizen`
+- **Docker Hub**: `docker.io/georift/install-jellyfin-tizen`
+
+### Required Secrets
+
+To enable automatic publishing, configure these repository secrets:
+
+| Secret | Description | Required For |
+|--------|-------------|--------------|
+| `DOCKERHUB_USERNAME` | Docker Hub username | Docker Hub publishing |
+| `DOCKERHUB_TOKEN` | Docker Hub access token | Docker Hub publishing |
+
+**Note**: GHCR publishing uses the built-in `GITHUB_TOKEN` and requires no additional secrets.
+
+### Supported Platforms
+
+The CI automatically builds for multiple architectures:
+- `linux/amd64` - x86_64 systems
+- `linux/arm64` - ARM64 systems (Apple Silicon, modern ARM servers)
+
+### Automatic Tagging
+
+Images are tagged based on Git events:
+- `latest` - Latest commit on main branch
+- `main`, `develop` - Branch names
+- `v1.0.0` - Git tags (semver)
+- `pr-123` - Pull request numbers
+
 ## Credits
 
 This project is possible thanks to these projects:
 
-- [jellyfin-tizen](https://github.com/jellyfin/jellyfin-tizen)
-- [jeppevinkel/jellyfin-tizen-builds](https://github.com/jeppevinkel/jellyfin-tizen-builds) for providing development builds
-- [vitalets/docker-tizen-webos-sdk](https://github.com/vitalets/docker-tizen-webos-sdk) for a docker container preinstalled with the Tizen SDK
+- [jellyfin-tizen](https://github.com/jellyfin/jellyfin-tizen) - Original Jellyfin Tizen app
+- [jeppevinkel/jellyfin-tizen-builds](https://github.com/jeppevinkel/jellyfin-tizen-builds) - Pre-built Jellyfin packages
+- [vitalets/docker-tizen-webos-sdk](https://github.com/vitalets/docker-tizen-webos-sdk) - Docker container with Tizen SDK
