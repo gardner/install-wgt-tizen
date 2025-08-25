@@ -16,7 +16,7 @@ Install any WGT package to your TV with a simple Docker command or docker-compos
 #### Place TV in Developer Mode
 
 > [!NOTE]
-> If the TV is set to use a Right-to-left language (Arabic, Hebrew, etc). You need to enter the IP address on the TV backwards. [Read more.](https://github.com/Georift/install-jellyfin-tizen/issues/30)
+> If the TV is set to use a Right-to-left language (Arabic, Hebrew, etc). You need to enter the IP address on the TV backwards. [Read more.](https://github.com/gardner/install-wgt-tizen/issues/30)
 - On the TV, open the "Smart Hub".
 - Select the "Apps" panel.
 - Press the "123" button (or if your remote doesn't have this button, long press the Home button) before typing "12345" with the on-screen keyboard.
@@ -42,17 +42,17 @@ Install any WGT package by specifying the TV IP and optionally the GitHub reposi
 
 ```bash
 # Install default Jellyfin
-docker run --rm ghcr.io/georift/install-jellyfin-tizen 192.168.1.100
+docker run --rm ghcr.io/gardner/install-wgt-tizen 192.168.1.100
 
 # Install specific WGT file and release
 docker run --rm \
   -e GITHUB_REPO=your-org/your-tizen-app \
   -e WGT_FILE=YourApp \
   -e RELEASE_TAG=v1.2.3 \
-  ghcr.io/georift/install-jellyfin-tizen 192.168.1.100
+  ghcr.io/gardner/install-wgt-tizen 192.168.1.100
 
 # Using command line arguments (legacy method)
-docker run --rm ghcr.io/georift/install-jellyfin-tizen 192.168.1.100 YourApp v1.2.3
+docker run --rm ghcr.io/gardner/install-wgt-tizen 192.168.1.100 YourApp v1.2.3
 ```
 
 ### Docker Compose (Recommended)
@@ -63,7 +63,7 @@ Create or modify `docker-compose.yml`:
 version: '3.8'
 services:
   jellyfin-installer:
-    image: ghcr.io/georift/install-jellyfin-tizen
+    image: ghcr.io/gardner/install-wgt-tizen
     environment:
       - GITHUB_REPO=jeppevinkel/jellyfin-tizen-builds
       - WGT_FILE=Jellyfin-TrueHD
@@ -71,7 +71,7 @@ services:
     command: ["192.168.1.100"]
   
   custom-app-installer:
-    image: ghcr.io/georift/install-jellyfin-tizen
+    image: ghcr.io/gardner/install-wgt-tizen
     environment:
       - GITHUB_REPO=your-org/custom-tizen-app
       - WGT_FILE=CustomApp
@@ -107,7 +107,7 @@ docker run --rm \
   -v "$(pwd)/author.p12":/certificates/author.p12 \
   -v "$(pwd)/distributor.p12":/certificates/distributor.p12 \
   -e CERTIFICATE_PASSWORD='YourPassword' \
-  ghcr.io/georift/install-jellyfin-tizen 192.168.1.100
+  ghcr.io/gardner/install-wgt-tizen 192.168.1.100
 ```
 
 ### Validating Success
@@ -147,14 +147,14 @@ This tool works on any amd64 based system. For ARM-based systems (Apple Silicon 
 
 Use platform flag:
 ```bash
-docker run --rm --platform linux/amd64 ghcr.io/georift/install-jellyfin-tizen 192.168.1.100
+docker run --rm --platform linux/amd64 ghcr.io/gardner/install-wgt-tizen 192.168.1.100
 ```
 
 Or in docker-compose.yml:
 ```yaml
 services:
   installer:
-    image: ghcr.io/georift/install-jellyfin-tizen
+    image: ghcr.io/gardner/install-wgt-tizen
     platform: linux/amd64
 ```
 
@@ -168,12 +168,12 @@ services:
 
 ### Install Jellyfin (Default)
 ```bash
-docker run --rm ghcr.io/georift/install-jellyfin-tizen 192.168.1.100
+docker run --rm ghcr.io/gardner/install-wgt-tizen 192.168.1.100
 ```
 
 ### Install Different Jellyfin Build
 ```bash
-docker run --rm -e WGT_FILE=Jellyfin-TrueHD ghcr.io/georift/install-jellyfin-tizen 192.168.1.100
+docker run --rm -e WGT_FILE=Jellyfin-TrueHD ghcr.io/gardner/install-wgt-tizen 192.168.1.100
 ```
 
 ### Install Custom Tizen App
@@ -182,15 +182,15 @@ docker run --rm \
   -e GITHUB_REPO=your-username/your-tizen-app \
   -e WGT_FILE=YourAppName \
   -e RELEASE_TAG=v1.0.0 \
-  ghcr.io/georift/install-jellyfin-tizen 192.168.1.100
+  ghcr.io/gardner/install-wgt-tizen 192.168.1.100
 ```
 
 ## CI/CD and Container Registry
 
 This project uses GitHub Actions to automatically build and publish Docker images to multiple registries:
 
-- **GitHub Container Registry (GHCR)**: `ghcr.io/georift/install-jellyfin-tizen`
-- **Docker Hub**: `docker.io/georift/install-jellyfin-tizen`
+- **GitHub Container Registry (GHCR)**: `ghcr.io/gardner/install-wgt-tizen`
+- **Docker Hub**: `docker.io/gardner/install-wgt-tizen`
 
 ### Required Secrets
 

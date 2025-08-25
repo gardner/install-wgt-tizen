@@ -3,7 +3,7 @@ version: '3.8'
 services:
   tizen-installer:
     build: .
-    # Or use: image: ghcr.io/georift/install-jellyfin-tizen
+    # Or use: image: ghcr.io/gardner/install-wgt-tizen
     environment:
       # Repository containing WGT releases (format: owner/repo)
       - GITHUB_REPO=jeppevinkel/jellyfin-tizen-builds

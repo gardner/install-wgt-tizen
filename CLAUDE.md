@@ -41,21 +41,21 @@ docker build -t tizen-installer .
 ### Testing Installation
 ```bash
 # Install default Jellyfin
-docker run --rm ghcr.io/georift/install-jellyfin-tizen 192.168.1.100
+docker run --rm ghcr.io/gardner/install-wgt-tizen 192.168.1.100
 
 # Install specific WGT from different repo
 docker run --rm \
   -e GITHUB_REPO=your-org/your-tizen-app \
   -e WGT_FILE=YourApp \
   -e RELEASE_TAG=v1.2.3 \
-  ghcr.io/georift/install-jellyfin-tizen 192.168.1.100
+  ghcr.io/gardner/install-wgt-tizen 192.168.1.100
 
 # With custom certificate
 docker run --rm \
   -v "$(pwd)/author.p12":/certificates/author.p12 \
   -v "$(pwd)/distributor.p12":/certificates/distributor.p12 \
   -e CERTIFICATE_PASSWORD='password' \
-  ghcr.io/georift/install-jellyfin-tizen 192.168.1.100
+  ghcr.io/gardner/install-wgt-tizen 192.168.1.100
 ```
 
 ### Docker Compose Development
@@ -70,7 +70,7 @@ docker-compose --profile custom up custom-app
 ### Platform-Specific Testing
 For ARM-based systems (Apple Silicon Macs):
 ```bash
-docker run --rm --platform linux/amd64 ghcr.io/georift/install-jellyfin-tizen 192.168.1.100
+docker run --rm --platform linux/amd64 ghcr.io/gardner/install-wgt-tizen 192.168.1.100
 ```
 
 ### Debugging
