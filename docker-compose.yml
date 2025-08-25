@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  tizen-installer:
+    build: .
+    # Or use: image: ghcr.io/georift/install-jellyfin-tizen
+    environment:
+      # Repository containing WGT releases (format: owner/repo)
+      - GITHUB_REPO=jeppevinkel/jellyfin-tizen-builds
+      
+      # WGT file name (without .wgt extension)
+      - WGT_FILE=Jellyfin
+      
+      # Release tag to download (use "latest" for latest release)
+      - RELEASE_TAG=latest
+      
+      # Certificate password for custom signing (optional)
+      # - CERTIFICATE_PASSWORD=your_cert_password
+    
+    # Mount custom certificates if needed
+    volumes:
+      # Uncomment and update paths if using custom certificates
+      # - ./certificates/author.p12:/certificates/author.p12:ro
+      # - ./certificates/distributor.p12:/certificates/distributor.p12:ro
+      
+      # Optional: mount local WGT files
+      # - ./wgt_files:/wgt_files:ro
+    
+    # Pass TV IP as command argument
+    command: ["192.168.1.100"]
+    
+    # For ARM-based systems (Apple Silicon, etc.)
+    # platform: linux/amd64
+    
+    # Increase file descriptor limits if needed
+    # ulimits:
+    #   nofile: 65536
+
+  # Example: Different app installation
+  custom-app:
+    build: .
+    environment:
+      - GITHUB_REPO=your-org/your-tizen-app-builds
+      - WGT_FILE=YourApp
+      - RELEASE_TAG=v1.2.3
+    command: ["192.168.1.100"]
+    profiles:
+      - custom  # Use with: docker-compose --profile custom up
