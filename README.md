@@ -205,9 +205,10 @@ To enable automatic publishing, configure these repository secrets:
 
 ### Supported Platforms
 
-The CI automatically builds for multiple architectures:
+The CI builds for x86_64 architecture only:
 - `linux/amd64` - x86_64 systems
-- `linux/arm64` - ARM64 systems (Apple Silicon, modern ARM servers)
+
+**Note**: ARM64 builds are not supported because the Tizen Studio SDK contains x86-64 binaries that cannot run on ARM64 architecture.
 
 ### Automatic Tagging
 
