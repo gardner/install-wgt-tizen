@@ -110,11 +110,15 @@ if [ -f "$WGT_FILE.wgt" ]; then
         if [ -f "/tmp/config.xml" ]; then
             echo "✅ config.xml found in WGT"
             
-            # Parse key information from config.xml
-            WIDGET_ID=$(grep -o 'id="[^"]*"' /tmp/config.xml | cut -d'"' -f2)
-            WIDGET_VERSION=$(grep -o 'version="[^"]*"' /tmp/config.xml | cut -d'"' -f2) 
-            APP_ID=$(grep -o '<tizen:application id="[^"]*"' /tmp/config.xml | cut -d'"' -f2)
-            REQUIRED_VERSION=$(grep -o 'required_version="[^"]*"' /tmp/config.xml | cut -d'"' -f2)
+            # Parse key information from config.xml handling multiline XML
+            # Extract widget attributes from multiline widget element
+            WIDGET_SECTION=$(sed -n '/<widget/,/>/p' /tmp/config.xml | tr '\n' ' ')
+            WIDGET_ID=$(echo "$WIDGET_SECTION" | sed 's/.*id="\([^"]*\)".*/\1/')
+            WIDGET_VERSION=$(echo "$WIDGET_SECTION" | sed 's/.*version="\([^"]*\)".*/\1/')
+            
+            # Extract tizen:application attributes (single line)
+            APP_ID=$(grep '<tizen:application' /tmp/config.xml | sed 's/.*id="\([^"]*\)".*/\1/')
+            REQUIRED_VERSION=$(grep 'required_version=' /tmp/config.xml | sed 's/.*required_version="\([^"]*\)".*/\1/')
             
             echo "📝 Widget ID: $WIDGET_ID"
             echo "📝 Widget Version: $WIDGET_VERSION" 
