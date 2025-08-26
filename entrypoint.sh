@@ -89,4 +89,115 @@ if ! [ -z "$CERTIFICATE_PASSWORD" ]; then
 fi
 
 echo "Attempting to install $WGT_FILE.wgt from release: $TAG"
-tizen install -n $WGT_FILE.wgt -t "$TV_NAME"
+
+# Enhanced logging and validation before installation
+echo ""
+echo "=== WGT Package Validation ==="
+if [ -f "$WGT_FILE.wgt" ]; then
+    echo "✅ WGT file exists: $WGT_FILE.wgt"
+    WGT_SIZE=$(stat -c%s "$WGT_FILE.wgt" 2>/dev/null || stat -f%z "$WGT_FILE.wgt")
+    echo "📊 WGT file size: $(numfmt --to=iec $WGT_SIZE)"
+    
+    # Validate WGT structure
+    echo "🔍 Validating WGT structure..."
+    if unzip -t "$WGT_FILE.wgt" > /dev/null 2>&1; then
+        echo "✅ WGT file structure is valid"
+        
+        # Extract and examine config.xml
+        echo "📋 Extracting config.xml for validation..."
+        unzip -o "$WGT_FILE.wgt" config.xml -d /tmp/ 2>/dev/null
+        
+        if [ -f "/tmp/config.xml" ]; then
+            echo "✅ config.xml found in WGT"
+            
+            # Parse key information from config.xml
+            WIDGET_ID=$(grep -o 'id="[^"]*"' /tmp/config.xml | cut -d'"' -f2)
+            WIDGET_VERSION=$(grep -o 'version="[^"]*"' /tmp/config.xml | cut -d'"' -f2) 
+            APP_ID=$(grep -o '<tizen:application id="[^"]*"' /tmp/config.xml | cut -d'"' -f2)
+            REQUIRED_VERSION=$(grep -o 'required_version="[^"]*"' /tmp/config.xml | cut -d'"' -f2)
+            
+            echo "📝 Widget ID: $WIDGET_ID"
+            echo "📝 Widget Version: $WIDGET_VERSION" 
+            echo "📝 App ID: $APP_ID"
+            echo "📝 Required Tizen Version: $REQUIRED_VERSION"
+            
+            # Validate version format (x.y.z where x,y ≤ 255, z ≤ 65535)
+            if [[ $WIDGET_VERSION =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+                X=${BASH_REMATCH[1]}
+                Y=${BASH_REMATCH[2]}
+                Z=${BASH_REMATCH[3]}
+                
+                if [ "$X" -gt 255 ] || [ "$Y" -gt 255 ] || [ "$Z" -gt 65535 ]; then
+                    echo "❌ ERROR: Version format violates Tizen constraints!"
+                    echo "   x($X) and y($Y) must be ≤ 255, z($Z) must be ≤ 65535"
+                    echo "   Current: $WIDGET_VERSION"
+                    exit 1
+                else
+                    echo "✅ Version format is valid for Tizen"
+                fi
+            else
+                echo "❌ ERROR: Version format is invalid! Must be x.y.z format"
+                echo "   Current: $WIDGET_VERSION"
+                exit 1
+            fi
+            
+            # Check for required elements
+            if [ -z "$WIDGET_ID" ] || [ -z "$APP_ID" ] || [ -z "$WIDGET_VERSION" ]; then
+                echo "❌ ERROR: Missing required elements in config.xml"
+                echo "   Widget ID: $WIDGET_ID"
+                echo "   App ID: $APP_ID" 
+                echo "   Version: $WIDGET_VERSION"
+                exit 1
+            fi
+            
+            echo "✅ config.xml validation passed"
+            rm -f /tmp/config.xml
+        else
+            echo "❌ ERROR: config.xml not found in WGT package"
+            exit 1
+        fi
+        
+        # List WGT contents for debugging
+        echo "📦 WGT package contents:"
+        unzip -l "$WGT_FILE.wgt" | head -20
+        
+    else
+        echo "❌ ERROR: WGT file is corrupted or invalid"
+        exit 1
+    fi
+else
+    echo "❌ ERROR: WGT file not found: $WGT_FILE.wgt"
+    exit 1
+fi
+
+echo ""
+echo "=== Starting Installation ==="
+echo "Installing to TV: $TV_NAME"
+echo "App ID will be: $APP_ID"
+
+# Run installation with enhanced error reporting
+echo "Running: tizen install -n $WGT_FILE.wgt -t \"$TV_NAME\""
+if ! tizen install -n "$WGT_FILE.wgt" -t "$TV_NAME"; then
+    echo ""
+    echo "❌ Installation failed!"
+    echo ""
+    echo "🔍 Debugging Information:"
+    echo "- TV Name: $TV_NAME"
+    echo "- WGT File: $WGT_FILE.wgt"
+    echo "- Widget ID: $WIDGET_ID"
+    echo "- App ID: $APP_ID" 
+    echo "- Version: $WIDGET_VERSION"
+    echo "- Required Tizen: $REQUIRED_VERSION"
+    echo ""
+    echo "💡 Common causes of 'Parsing error -19':"
+    echo "1. Version format violates Tizen limits (x,y ≤ 255, z ≤ 65535)"
+    echo "2. Invalid XML syntax in config.xml"
+    echo "3. Missing required config.xml elements"
+    echo "4. Corrupted WGT file"
+    echo "5. Incompatible Tizen version requirement"
+    exit 1
+else
+    echo ""
+    echo "🎉 Installation successful!"
+    echo "✅ $WGT_FILE.wgt installed with App ID: $APP_ID"
+fi
